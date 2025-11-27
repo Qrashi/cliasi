@@ -1,22 +1,14 @@
 """Command line utility for coloring text and writing pretty things."""
-__version__ = "0.1.0"
-__author__ = "qrashi"
+__author__ = "Qrashi"
 
-from .clisi import Clisi, NonBlockingProgressTask, NonBlockingAnimationTask
+from .cliasi import Cliasi, NonBlockingProgressTask, NonBlockingAnimationTask
+from .__about__ import __version__
 
 SYMBOLS = {
     "success": "✔",
     "download": "⤓",
 }
 
-__all__ = ['SYMBOLS', 'Clisi', 'NonBlockingProgressTask', 'NonBlockingAnimationTask']
+__all__ = ['SYMBOLS', 'Cliasi', 'NonBlockingProgressTask', 'NonBlockingAnimationTask', 'cli']
 
-packageinstance = Clisi("CLI")
-
-# automatically export all public methods from clisi
-for attr_name in dir(packageinstance):
-    if not attr_name.startswith('_'):  # skip private/internal methods
-        attr = getattr(packageinstance, attr_name)
-        if callable(attr):
-            globals()[attr_name] = attr
-            __all__.append(attr_name)
+cli = Cliasi("CLI")

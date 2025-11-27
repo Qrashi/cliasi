@@ -1,24 +1,15 @@
-from asyncio import Condition
-from idlelib.run import flush_stdout
 from time import sleep
 from random import randint
 from typing import Union, Optional, Callable
+from threading import Thread, Event
 
-from .animation import PROGRESSBAR_LOADING, LOADING
+
+from .constants import PROGRESSBAR_LOADING, LOADING, Color
 
 DEFAULT_TERMINAL_SIZE = 40
 
-try:
-    from colorama import Fore, Style, init, ansi
 
-    init()  # Required for some Windows systems
-except ImportError:
-    print("! [clisi] Error: Could not import colorama! Colors won't work.")
-except Exception as e:
-    print("! [clisi] Error: Could not initialize colorama! Colors won't work. \n", e)
-
-
-def _terminalsize() -> int:
+def _terminal_size() -> int:
     return DEFAULT_TERMINAL_SIZE
 
 
@@ -26,16 +17,11 @@ try:
     from os import get_terminal_size
 
 
-    def _terminalsize() -> int:
+    def _terminal_size() -> int:
         return get_terminal_size().columns
 
 except Exception as e:
-    print("! [clisi] Error: Could not retrieve terminal size!", e)
-
-try:
-    from threading import Thread, Event
-except Exception as e:
-    print("! [clisi] Error: Could not initialize threading!", e)
+    print("! [cliasi] Error: Could not retrieve terminal size!", e)
 
 
 class NonBlockingAnimationTask:
@@ -44,16 +30,16 @@ class NonBlockingAnimationTask:
     """
     message: str
     oneline_override: bool
-    _condition: Event
+    condition: Event
     _thread: Thread
 
     def __init__(self, message: str, stop: Event, oneline_override: bool) -> None:
         self.message = message
         self.oneline_override = oneline_override
-        self._condition = stop
+        self.condition = stop
 
     def stop(self):
-        self._condition.set()
+        self.condition.set()
         self._thread.join()
         if self.oneline_override:
             print("")
@@ -76,11 +62,11 @@ class NonBlockingProgressTask(NonBlockingAnimationTask):
         self._update()
 
 
-class Clisi:
+class Cliasi:
     def __init__(self, prefix: str = "", use_oneline: bool = False, colors: bool = True, verbose_level: int = 0,
                  seperator: str = "|"):
         """
-        Initialize a clisi instance.
+        Initialize a cliasi instance.
         :param prefix: Message Prefix [prefix] message
         :param use_oneline: Have all messages appear in one line by default
         :param colors: Enable color display
@@ -101,7 +87,7 @@ class Clisi:
         :param prefix: New message prefix without brackets []
         :return:
         """
-        self.__prefix = Style.DIM + f"[{prefix}]"
+        self.__prefix = Color.DIM + f"[{prefix}]"
 
     def __verbose_check(self, level: int) -> bool:
         """
@@ -111,7 +97,7 @@ class Clisi:
         """
         return level > self.min_verbose_level
 
-    def __print(self, color: ansi.AnsiFore, symbol: str, message: str, oneline_override: Optional[bool]):
+    def __print(self, color: Color, symbol: str, message: str, oneline_override: Optional[bool]):
         """
         Print message to console
         :param color: Color to print message and symbol
@@ -123,10 +109,10 @@ class Clisi:
         oneline = self.oneline if oneline_override is None else oneline_override
         print('\r\x1b[2K\r',
               (color if self.enable_colors else "") + symbol,
-              Style.DIM + self.__prefix + Style.RESET_ALL,
+              Color.DIM + self.__prefix + Color.RESET,
               self.prefix_seperator + (color if self.enable_colors else ""),
               message,
-              end=("" if oneline else "\n") + Style.RESET_ALL,
+              end=("" if oneline else "\n") + Color.RESET,
               flush=True
               )
 
@@ -142,7 +128,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.LIGHTBLUE_EX, "i", message, oneline_override)
+        self.__print(Color.BRIGHT_BLUE, "i", message, oneline_override)
 
     def log(self, message: str, verbosity: int = 0, oneline_override: Optional[bool] = None):
         """
@@ -155,7 +141,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.LIGHTBLUE_EX, "LOG", message, oneline_override)
+        self.__print(Color.BRIGHT_BLUE, "LOG", message, oneline_override)
 
     def warn(self, message: str, verbosity: int = 0, oneline_override: Optional[bool] = None):
         """
@@ -168,7 +154,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.YELLOW, "!", message, oneline_override)
+        self.__print(Color.YELLOW, "!", message, oneline_override)
 
     def success(self, message: str, verbosity: int = 0, oneline_override: Optional[bool] = None):
         """
@@ -181,7 +167,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.GREEN, "✔", message, oneline_override)
+        self.__print(Color.GREEN, "✔", message, oneline_override)
 
     def fail(self, message: str, verbosity: int = 0, oneline_override: Optional[bool] = None):
         """
@@ -194,7 +180,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.RED, "X", message, oneline_override)
+        self.__print(Color.RED, "X", message, oneline_override)
 
     def neutral(self, message: str, verbosity: int = 0, oneline_override: Optional[bool] = None):
         """
@@ -207,7 +193,7 @@ class Clisi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(Fore.BLUE, "#", message, oneline_override)
+        self.__print(Color.BLUE, "#", message, oneline_override)
 
     def ask(self, message: str, oneline_override: Optional[bool] = None) -> str:
         """
@@ -217,7 +203,7 @@ class Clisi:
         :return:
         """
 
-        self.__print(Fore.MAGENTA, "?", message, oneline_override)
+        self.__print(Color.MAGENTA, "?", message, oneline_override)
         result = input("")
         oneline = self.oneline if oneline_override is None else oneline_override
         if oneline:
@@ -234,7 +220,7 @@ class Clisi:
         :return:
         """
         self.__print(
-            Fore.LIGHTYELLOW_EX,
+            Color.BRIGHT_YELLOW,
             LOADING["symbol"][selection_symbol][index_total % len(LOADING["symbol"][selection_symbol])],
             LOADING["animation"][selection_animation]["frames"][
                 (index_total // LOADING["animation"][selection_animation]["frame_every"]) % len(
@@ -283,9 +269,9 @@ class Clisi:
         """
         try:
             p = int(progress)
-        except Exception:
+        except ValueError:
             p = 0
-        # Estimate the characters printed before the bar by __print: symbol + space + " [prefix] " + space + separator
+        # Estimate the characters printed beColor the bar by __print: symbol + space + " [prefix] " + space + separator
         # We don't know the visual width of color codes; ignore them as they don't take columns.
         # Use a conservative estimate with a typical 1-char symbol (we'll use '#').
         dead_space = 3 + len(self.__prefix) + len(self.prefix_seperator) + len(f" {p}%") if show_percent else 0
@@ -295,7 +281,7 @@ class Clisi:
         p = max(0, min(100, progress))
 
         # Determine available width for the bar content (inside the brackets)
-        total_cols = _terminalsize()
+        total_cols = _terminal_size()
 
         inside_width = max(8, total_cols - max(0, dead_space) - 2)
 
@@ -335,7 +321,7 @@ class Clisi:
         i = 0
         while filled < target_fill and i < inside_width:
             # Skip positions occupied by message
-            if (i >= msg_start and i < msg_end):
+            if msg_start <= i < msg_end:
                 i += 1
                 continue
             bar[i] = "="
@@ -359,7 +345,7 @@ class Clisi:
         """
 
         # Print the bar. Keep it on one line unless overridden by oneline_override.
-        self.__print(Fore.LIGHTYELLOW_EX, "#", self.__scale_progressbar_to_max(message, progress, show_percent),
+        self.__print(Color.BRIGHT_YELLOW, "#", self.__scale_progressbar_to_max(message, progress, show_percent),
                      oneline_override)
 
     def progressbar_download(self, message: str, progress: int = 0, show_percent: bool = False,
@@ -373,7 +359,8 @@ class Clisi:
         :param oneline_override: Override the message to stay in the command line
         :return:
         """
-        self.__print(Fore.CYAN, "⤓", self.__scale_progressbar_to_max(message, progress, show_percent), oneline_override)
+        self.__print(Color.CYAN, "⤓", self.__scale_progressbar_to_max(message, progress, show_percent),
+                     oneline_override)
 
     def animate_message_non_blocking(self, message: str, interval: Union[int, float] = 0.25,
                                      oneline_override: Optional[bool] = None) -> NonBlockingAnimationTask:
@@ -402,15 +389,16 @@ class Clisi:
             while not condition.is_set():
                 self.__show_animation_frame(task.message, selection_symbol, selection_animation, index_total)
                 index_total += 1
-                task._condition.wait(timeout=interval)
+                task.condition.wait(timeout=interval)
 
         thread = Thread(target=animate, args=(), daemon=True)
         task._thread = thread
         thread.start()
         return task
 
-    def __progressbar_nonblocking(self, message: str, progress: int, type: str, show_percent: bool, interval: Union[int, float],
-                                  color: ansi.AnsiFore,
+    def __progressbar_nonblocking(self, message: str, progress: int, type: str, show_percent: bool,
+                                  interval: Union[int, float],
+                                  color: Color,
                                   oneline_override: Optional[bool] = False) -> NonBlockingProgressTask:
 
         animation = PROGRESSBAR_LOADING[type][randint(0, len(PROGRESSBAR_LOADING[type]) - 1)]
@@ -426,7 +414,8 @@ class Clisi:
             Update only the progressbar section of the animation.
             :return:
             """
-            self.__print(color, animation[task.index % len(animation)], self.__scale_progressbar_to_max(task.message, task.progress, show_percent), True)
+            self.__print(color, animation[task.index % len(animation)],
+                         self.__scale_progressbar_to_max(task.message, task.progress, show_percent), True)
 
         def animate():
             """
@@ -445,7 +434,9 @@ class Clisi:
         thread.start()
         return task
 
-    def progressbar_animated_normal(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25, show_percent: bool = False, oneline_override: Optional[bool] = False) -> NonBlockingProgressTask:
+    def progressbar_animated_normal(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25,
+                                    show_percent: bool = False,
+                                    oneline_override: Optional[bool] = False) -> NonBlockingProgressTask:
         """
         Display an animated progressbar
         Update progress using the returned Task object
@@ -455,9 +446,12 @@ class Clisi:
         :param oneline_override: Override the message to stay in the command line
         :return: NonBlockingProgressTask on which you can call update(progress) and stop()
         """
-        return self.__progressbar_nonblocking(message, progress, "default", show_percent, interval, Fore.LIGHTYELLOW_EX, oneline_override)
+        return self.__progressbar_nonblocking(message, progress, "default", show_percent, interval, Color.BRIGHT_YELLOW,
+                                              oneline_override)
 
-    def progressbar_animated_download(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25, show_percent: bool = False, oneline_override: Optional[bool] = False) -> NonBlockingProgressTask:
+    def progressbar_animated_download(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25,
+                                      show_percent: bool = False,
+                                      oneline_override: Optional[bool] = False) -> NonBlockingProgressTask:
         """
         Display an animated progressbar
         Update progress using the returned Task object
@@ -467,5 +461,5 @@ class Clisi:
         :param oneline_override: Override the message to stay in the command line
         :return: NonBlockingProgressTask on which you can call update(progress) and stop()
         """
-        return self.__progressbar_nonblocking(message, progress, "download", show_percent, interval, Fore.CYAN, oneline_override)
-
+        return self.__progressbar_nonblocking(message, progress, "download", show_percent, interval, Color.CYAN,
+                                              oneline_override)
