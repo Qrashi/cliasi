@@ -86,13 +86,13 @@ def test_update_prefix_and_separator(capsys):
 
 def test_verbosity_filters(capsys):
     c = Cliasi("V", messages_stay_in_one_line=False, colors=False, min_verbose_level=1)
-    # According to current implementation, level > min is suppressed
+    # According to current implementation, level < min is suppressed
     # lower or equal -> shown
-    c.info("visible", verbosity=0)
+    c.info("visible", verbosity=1)
     out = normalize_output(capsys.readouterr().out)
     assert "visible" in out
     # higher than min -> suppressed
-    c.info("hidden", verbosity=2)
+    c.info("hidden", verbosity=0)
     out = capsys.readouterr().out
     assert out == ""
 
@@ -198,7 +198,7 @@ def test_progressbar_animated_download_update_and_stop(fixed_width, capsys):
 
 def test_null_task_is_safe_for_animations_when_verbosity_suppressed(capsys):
     # With min_verbose_level=0, passing verbosity=2 should suppress output and return a safe task
-    c = Cliasi("VT", messages_stay_in_one_line=True, colors=False, min_verbose_level=0)
+    c = Cliasi("VT", messages_stay_in_one_line=True, colors=False, min_verbose_level=3)
 
     task1 = c.animate_message_non_blocking("Hidden", verbosity=2, interval=0.005)
     # Should not be None and must support update/stop safely
@@ -223,7 +223,7 @@ def test_null_task_is_safe_for_animations_when_verbosity_suppressed(capsys):
 
 
 def test_null_task_is_safe_for_progressbars_when_verbosity_suppressed(fixed_width, capsys):
-    c = Cliasi("VTPB", messages_stay_in_one_line=True, colors=False, min_verbose_level=0)
+    c = Cliasi("VTPB", messages_stay_in_one_line=True, colors=False, min_verbose_level=3)
 
     pb1 = c.progressbar_animated_normal(
         "Hidden PB", verbosity=2, progress=10, interval=0.005, show_percent=True

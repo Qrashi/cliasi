@@ -64,11 +64,11 @@ class Cliasi:
 
     def __verbose_check(self, level: int) -> bool:
         """
-        Check if message should be sent
+        Check if message should be interrupted by verbose level.
         :param level: given verbosity level
         :return: False if message should be sent, true if message should not be sent
         """
-        return level > self.min_verbose_level
+        return level < self.min_verbose_level
 
     def __print(self, color: TextColor, symbol: str, message: str, override_messages_stay_in_one_line: Optional[bool],
                 color_message: bool = True):
