@@ -4,7 +4,8 @@ from getpass import getpass
 from typing import Union, Optional, Callable, List, Dict
 from threading import Thread, Event
 
-from .constants import ANIMATION_SYMBOLS_PROGRESSBAR, ANIMATIONS_MAIN, ANIMATIONS_SYMBOLS, TextColor, DEFAULT_TERMINAL_SIZE, UNICORN
+from .constants import ANIMATION_SYMBOLS_PROGRESSBAR, ANIMATIONS_MAIN, ANIMATIONS_SYMBOLS, TextColor, \
+    DEFAULT_TERMINAL_SIZE, UNICORN
 
 # Try to get the terminal size
 try:
@@ -69,7 +70,8 @@ class Cliasi:
         """
         return level > self.min_verbose_level
 
-    def __print(self, color: TextColor, symbol: str, message: str, override_messages_stay_in_one_line: Optional[bool], color_message: bool = True):
+    def __print(self, color: TextColor, symbol: str, message: str, override_messages_stay_in_one_line: Optional[bool],
+                color_message: bool = True):
         """
         Print message to console
         :param color: Color to print message and symbol
@@ -100,7 +102,8 @@ class Cliasi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(TextColor.WHITE + TextColor.DIM, "#", message, override_messages_stay_in_one_line, color_message=False)
+        self.__print(TextColor.WHITE + TextColor.DIM, "#", message, override_messages_stay_in_one_line,
+                     color_message=False)
 
     def info(self, message: str, verbosity: int = 0, override_messages_stay_in_one_line: Optional[bool] = None):
         """
@@ -126,7 +129,8 @@ class Cliasi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(TextColor.WHITE + TextColor.DIM, "LOG", message, override_messages_stay_in_one_line, color_message=False)
+        self.__print(TextColor.WHITE + TextColor.DIM, "LOG", message, override_messages_stay_in_one_line,
+                     color_message=False)
 
     def log_small(self, message: str, verbosity: int = 0, override_messages_stay_in_one_line: Optional[bool] = None):
         """
@@ -139,11 +143,12 @@ class Cliasi:
         if self.__verbose_check(verbosity):
             return
 
-        self.__print(TextColor.WHITE + TextColor.DIM, "L", message, override_messages_stay_in_one_line, color_message=False)
+        self.__print(TextColor.WHITE + TextColor.DIM, "L", message, override_messages_stay_in_one_line,
+                     color_message=False)
 
     def list(self, message: str, verbosity: int = 0, override_messages_stay_in_one_line: Optional[bool] = None):
         """
-        Send an list style message in format * [prefix] message
+        Send a list style message in format * [prefix] message
         :param message: Message to send
         :param verbosity: Verbosity of this message
         :param override_messages_stay_in_one_line: Override the message to stay in one line
@@ -200,7 +205,8 @@ class Cliasi:
         """
         print("")
 
-    def ask(self, message: str, hide_input: bool = False, override_messages_stay_in_one_line: Optional[bool] = None) -> str:
+    def ask(self, message: str, hide_input: bool = False,
+            override_messages_stay_in_one_line: Optional[bool] = None) -> str:
         """
         Ask for input in format ? [prefix] message
         :param message: Question to ask
@@ -238,6 +244,7 @@ class Cliasi:
     def animate_message_blocking(self,
                                  message: str,
                                  time: Union[int, float],
+                                 verbosity: int = 0,
                                  interval: Union[int, float] = 0.25,
                                  unicorn: bool = False,
                                  override_messages_stay_in_one_line: Optional[bool] = None):
@@ -246,11 +253,16 @@ class Cliasi:
         This will block the main thread using time.sleep
         :param message: Message to display
         :param time: Time to display for
+        :param verbosity: Verbosity of this message
         :param interval: Interval between changes in loading animation
         :param unicorn: Enable unicorn mode
         :param override_messages_stay_in_one_line: Override the message to stay in one line
         :return:
         """
+
+        if self.__verbose_check(verbosity):
+            return
+
         remaining = time
         selection_symbol, selection_animation = randint(0, len(ANIMATIONS_SYMBOLS) - 1), randint(0, len(
             ANIMATIONS_MAIN) - 1)
@@ -259,7 +271,8 @@ class Cliasi:
         index_total = 0
         while remaining > 0:
             self.__show_animation_frame(message,
-                                        TextColor.BRIGHT_MAGENTA if not unicorn else UNICORN[index_total % len(UNICORN)],
+                                        TextColor.BRIGHT_MAGENTA if not unicorn else UNICORN[
+                                            index_total % len(UNICORN)],
                                         symbol_frames[index_total % len(symbol_frames)],
                                         animation_frames[
                                             (index_total // ANIMATIONS_MAIN[selection_animation]["frame_every"]) % len(
@@ -274,7 +287,7 @@ class Cliasi:
 
         sleep(remaining)
         if not (
-        self.messages_stay_in_one_line if override_messages_stay_in_one_line is not None else override_messages_stay_in_one_line):
+                self.messages_stay_in_one_line if override_messages_stay_in_one_line is not None else override_messages_stay_in_one_line):
             print("")
 
     def __format_progressbar_to_screen_width(self, message: str, symbol: str, progress: int, show_percent: bool) -> str:
@@ -294,7 +307,8 @@ class Cliasi:
         # Estimate the characters printed beColor the bar by __print: symbol + space + " [prefix] " + space + separator
         # We don't know the visual width of color codes; ignore them as they don't take columns.
         # Use a conservative estimate with a typical 1-char symbol (we'll use '#').
-        dead_space = len(symbol) + 2 + len(self.__prefix) + len(self.prefix_seperator) + (len(f" {p}%") if show_percent else 0)
+        dead_space = len(symbol) + 2 + len(self.__prefix) + len(self.prefix_seperator) + (
+            len(f" {p}%") if show_percent else 0)
         # symbol + space (1) + prefix + separator + space (2)
 
         # Clamp progress
@@ -351,36 +365,47 @@ class Cliasi:
         # Wrap with brackets
         return "[" + "".join(bar) + "]" + (f" {p}%" if show_percent else "")
 
-    def progressbar(self, message: str, progress: int = 0, override_messages_stay_in_one_line: Optional[bool] = False,
+    def progressbar(self, message: str, verbosity: int = 0, progress: int = 0,
+                    override_messages_stay_in_one_line: Optional[bool] = False,
                     show_percent: bool = False):
         """
         Display a progress bar with specified progress
         This requires grabbing correct terminal width
         This is not animated. Call it multiple times to update
         :param message: Message to display
+        :param verbosity: Verbosity to display
         :param progress: Progress to display
         :param override_messages_stay_in_one_line: Override the message to stay in one line
         :param show_percent: Show percent next to the progressbar
         :return:
         """
 
-        # Print the bar. Keep it on one line unless overridden by override_messages_stay_in_one_line.
+        if self.__verbose_check(verbosity):
+            return
+
+            # Print the bar. Keep it on one line unless overridden by override_messages_stay_in_one_line.
         self.__print(TextColor.BLUE, "#",
                      self.__format_progressbar_to_screen_width(message, "#", progress, show_percent),
                      override_messages_stay_in_one_line)
 
-    def progressbar_download(self, message: str, progress: int = 0, show_percent: bool = False,
+    def progressbar_download(self, message: str, verbosity: int = 0, progress: int = 0, show_percent: bool = False,
                              override_messages_stay_in_one_line: Optional[bool] = False):
         """
         Display a download bar with specified progress
         This is not animated. Call it multiple times to update
         :param message: Message to display
+        :param verbosity: Verbosity to display
         :param progress: Progress to display
         :param show_percent: Show percent next to the progressbar
         :param override_messages_stay_in_one_line: Override the message to stay in one line
         :return:
         """
-        self.__print(TextColor.BRIGHT_CYAN, "⤓", self.__format_progressbar_to_screen_width(message, "⤓", progress, show_percent),
+
+        if self.__verbose_check(verbosity):
+            return
+
+        self.__print(TextColor.BRIGHT_CYAN, "⤓",
+                     self.__format_progressbar_to_screen_width(message, "⤓", progress, show_percent),
                      override_messages_stay_in_one_line)
 
     class NonBlockingAnimationTask:
@@ -405,7 +430,7 @@ class Cliasi:
             if not self._message_stays_in_one_line:
                 print("")
 
-        def update(self, message: Optional[str] = None, *args, **kwargs):
+        def update(self, message: Optional[str] = None):
             """
             Update message of animation
             :param message: Message to update to (None for no update)
@@ -460,35 +485,47 @@ class Cliasi:
         thread.start()
         return task
 
-    def animate_message_non_blocking(self, message: str, interval: Union[int, float] = 0.25, unicorn: bool = False,
+    def animate_message_non_blocking(self, message: str, verbosity: int = 0, interval: Union[int, float] = 0.25,
+                                     unicorn: bool = False,
                                      override_messages_stay_in_one_line: Optional[
-                                         bool] = None) -> NonBlockingAnimationTask:
+                                         bool] = None) -> Optional[NonBlockingAnimationTask]:
         """
         Display a loading animation in the background
         Stop animation by calling .stop() on the returned object
         :param message: Message to display
+        :param verbosity: Verbosity of message
         :param interval: Interval for animation to play
         :param unicorn: Enable unicorn mode
         :param override_messages_stay_in_one_line: Override the message to stay in one line
-        :return:
+        :return: NonBlockingAnimationTask if verbosity requirement is met.
         """
+
+        if self.__verbose_check(verbosity):
+            return self.__get_null_task()
+
         selection_symbol, selection_animation = randint(0, len(ANIMATIONS_SYMBOLS) - 1), randint(0,
                                                                                                  len(ANIMATIONS_MAIN) - 1)
         return self.__get_animation_task(message, TextColor.BRIGHT_MAGENTA, ANIMATIONS_SYMBOLS[selection_symbol],
                                          ANIMATIONS_MAIN[selection_animation], interval, unicorn,
                                          override_messages_stay_in_one_line)
 
-    def animate_message_download_non_blocking(self, message: str, interval: Union[int, float] = 0.25, unicorn: bool = False,
+    def animate_message_download_non_blocking(self, message: str, verbosity: int = 0,
+                                              interval: Union[int, float] = 0.25, unicorn: bool = False,
                                               override_messages_stay_in_one_line: Optional[
-                                                  bool] = False) -> NonBlockingAnimationTask:
+                                                  bool] = False) -> Optional[NonBlockingAnimationTask]:
         """
         Display a downloading animation in the background
         :param message: Message to display
+        :param verbosity: Verbosity of message
         :param interval: Interval for animation to play
         :param unicorn: Enable unicorn mode
         :param override_messages_stay_in_one_line: Override the message to stay in one line
-        :return: A NonBlockingAnimationTask
+        :return: A NonBlockingAnimationTask if verbosity requirement is met.
         """
+
+        if self.__verbose_check(verbosity):
+            return self.__get_null_task()
+
         selection_animation = randint(0, len(ANIMATIONS_MAIN) - 1)
         return self.__get_animation_task(message, TextColor.BRIGHT_CYAN,
                                          ANIMATION_SYMBOLS_PROGRESSBAR["download"][
@@ -517,7 +554,17 @@ class Cliasi:
             :return:
             """
             self._progress = progress if progress is not None else self._progress
-            super(Cliasi.NonBlockingProgressTask, self).update(message, *args, **kwargs)
+            super(Cliasi.NonBlockingProgressTask, self).update(message)
+
+    def __get_null_task(self) -> NonBlockingProgressTask:
+        """
+        Get a null progressbar task to return when verbosity is not met to not return None
+        :return: "fake" NonBlockingProgressTask
+        """
+        task = Cliasi.NonBlockingProgressTask("", Event(), False, 0)
+        task._update = lambda: None
+        task.stop = lambda: None
+        return task
 
     def __get_progressbar_task(self, message: str, progress: int, symbol_animation: List[str], show_percent: bool,
                                interval: Union[int, float],
@@ -571,7 +618,10 @@ class Cliasi:
         thread.start()
         return task
 
-    def progressbar_animated_normal(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25,
+    def progressbar_animated_normal(self, message: str,
+                                    verbosity: int = 0,
+                                    progress: int = 0,
+                                    interval: Union[int, float] = 0.25,
                                     show_percent: bool = False,
                                     unicorn: bool = False,
                                     override_messages_stay_in_one_line: Optional[
@@ -579,14 +629,19 @@ class Cliasi:
         """
         Display an animated progressbar
         Update progress using the returned Task object
-        :param interval: Interval between animation frames
         :param message: Message to display
+        :param verbosity: Verbosity of message
+        :param interval: Interval between animation frames
         :param progress: Current Progress to display
         :param show_percent: Show percent next to the progressbar
         :param unicorn: Enable unicorn mode
         :param override_messages_stay_in_one_line: Override the message to stay in one line
         :return: NonBlockingProgressTask on which you can call update(progress) and stop()
         """
+
+        if self.__verbose_check(verbosity):
+            return self.__get_null_task()
+
         return self.__get_progressbar_task(message,
                                            progress,
                                            ANIMATION_SYMBOLS_PROGRESSBAR["default"][
@@ -597,7 +652,10 @@ class Cliasi:
                                            unicorn,
                                            override_messages_stay_in_one_line)
 
-    def progressbar_animated_download(self, message: str, progress: int = 0, interval: Union[int, float] = 0.25,
+    def progressbar_animated_download(self, message: str,
+                                      verbosity: int = 0,
+                                      progress: int = 0,
+                                      interval: Union[int, float] = 0.25,
                                       show_percent: bool = False,
                                       unicorn: bool = False,
                                       override_messages_stay_in_one_line: Optional[
@@ -605,14 +663,19 @@ class Cliasi:
         """
         Display an animated progressbar
         Update progress using the returned Task object
-        :param interval: Interval between animation frames
         :param message: Message to display
+        :param verbosity: Verbosity of message
+        :param interval: Interval between animation frames
         :param progress: Current Progress to display
         :param show_percent: Show percent next to the progressbar
         :param unicorn: Enable unicorn mode
         :param override_messages_stay_in_one_line: Override the message to stay in one line
         :return: NonBlockingProgressTask on which you can call update(progress) and stop()
         """
+
+        if self.__verbose_check(verbosity):
+            return self.__get_null_task()
+
         return self.__get_progressbar_task(message,
                                            progress,
                                            ANIMATION_SYMBOLS_PROGRESSBAR["download"][

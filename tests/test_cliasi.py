@@ -196,6 +196,60 @@ def test_progressbar_animated_download_update_and_stop(fixed_width, capsys):
     assert "Getting" in out or "15%" in out or "[" in out
 
 
+def test_null_task_is_safe_for_animations_when_verbosity_suppressed(capsys):
+    # With min_verbose_level=0, passing verbosity=2 should suppress output and return a safe task
+    c = Cliasi("VT", messages_stay_in_one_line=True, colors=False, min_verbose_level=0)
+
+    task1 = c.animate_message_non_blocking("Hidden", verbosity=2, interval=0.005)
+    # Should not be None and must support update/stop safely
+    assert task1 is not None
+    # Call update with and without message multiple times; must not raise
+    task1.update()
+    task1.update(message="Still hidden")
+    task1.stop()
+    task1.stop()  # idempotent
+
+    # Download variant
+    task2 = c.animate_message_download_non_blocking("Hidden DL", verbosity=2, interval=0.005)
+    assert task2 is not None
+    task2.update()
+    task2.update(message="Still hidden DL")
+    task2.stop()
+    task2.stop()
+
+    # No output should have been produced because of suppression
+    out = capsys.readouterr().out
+    assert out == ""
+
+
+def test_null_task_is_safe_for_progressbars_when_verbosity_suppressed(fixed_width, capsys):
+    c = Cliasi("VTPB", messages_stay_in_one_line=True, colors=False, min_verbose_level=0)
+
+    pb1 = c.progressbar_animated_normal(
+        "Hidden PB", verbosity=2, progress=10, interval=0.005, show_percent=True
+    )
+    assert pb1 is not None
+    # update with and without progress must not raise; stop idempotent
+    pb1.update()
+    pb1.update(progress=20)
+    pb1.update(message="noop", progress=30)
+    pb1.stop()
+    pb1.stop()
+
+    pb2 = c.progressbar_animated_download(
+        "Hidden DL PB", verbosity=2, progress=5, interval=0.005
+    )
+    assert pb2 is not None
+    pb2.update()
+    pb2.update(progress=15)
+    pb2.stop()
+    pb2.stop()
+
+    # Suppressed -> no output expected
+    out = capsys.readouterr().out
+    assert out == ""
+
+
 def test_default_cli_instance_is_usable(capsys):
     # Using the shared instance exported as `cli`
     cli.info("shared works")
