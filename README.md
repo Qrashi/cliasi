@@ -11,7 +11,7 @@ from cliasi import cli
 cli.success("It works!")
 # > ✔ [CLI] | It works!
 
-cli.oneline = True
+cli.messages_stay_in_one_line = True
 # The next few lines will get overwritten
 cli.info("blah")
 cli.warn("doing something dangerous")
@@ -88,7 +88,7 @@ task = cli.progressbar_animated_download("Downloading files.")
 download()
 task.update(10)
 # You can also change the message while in the process
-task.message = "Extracting"
+task._message = "Extracting"
 extract()
 task.update(40)
 extract_again()
